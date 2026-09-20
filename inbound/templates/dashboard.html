@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Inbound mail</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%AC%3C/text%3E%3C/svg%3E">
+  <style nonce="{{NONCE}}">
+    :root {
+      --bg: #ebf0f5;
+      --surface: #ffffff;
+      --ink: #10222f;
+      --muted: #566b7d;
+      --line: #d3dce5;
+      --ok: #16794a;
+      --ok-wash: #dff3e8;
+      --warn: #9a3412;
+      --warn-wash: #fdeee4;
+      --focus: #1d5fa8;
+      --font: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1620;
+        --surface: #142130;
+        --ink: #e6edf4;
+        --muted: #92a5b7;
+        --line: #26384b;
+        --ok: #5bd695;
+        --ok-wash: #173a29;
+        --warn: #ffb27a;
+        --warn-wash: #3b2416;
+        --focus: #7db4ee;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.5 var(--font);
+    }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+    .page { max-width: 52rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+
+    .masthead {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      line-height: 1.1;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .lede { margin: 0.4rem 0 0; color: var(--muted); max-width: 34rem; }
+
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.875rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .live-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--muted); }
+    .live[data-state="ok"] .live-dot { background: var(--ok); }
+    .live[data-state="error"] .live-dot { background: var(--warn); }
+
+    .banner {
+      margin: 0 0 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: var(--warn-wash);
+      color: var(--warn);
+      border: 1px solid var(--warn);
+    }
+
+    .banner.is-info {
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .ledger {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .ledger-head {
+      padding: 0.75rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .rows { list-style: none; margin: 0; padding: 0; }
+    .row {
+      padding: 1rem 1.25rem 1.1rem;
+      border-left: 4px solid var(--ok);
+    }
+    .row + .row { border-top: 1px solid var(--line); }
+    .row.is-new { animation: arrive 2.6s ease-out; }
+    @keyframes arrive {
+      from { background: var(--ok-wash); }
+      to { background: transparent; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .row.is-new { animation: none; }
+    }
+
+    .row-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.25rem 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .status { font-weight: 650; color: var(--ok); }
+    .when { color: var(--muted); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+    .when-label { margin-right: 0.3rem; }
+    .when-rel::before { content: "\00a0(" ; }
+    .when-rel::after { content: ")"; }
+
+    .fields { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.25rem 1rem; margin: 0; }
+    .fields dt { color: var(--muted); }
+    .fields dd { margin: 0; overflow-wrap: anywhere; }
+    .fields dd.subject { font-weight: 600; }
+    .fields dd.is-empty { color: var(--muted); font-style: italic; font-weight: 400; }
+
+    .empty { padding: 3rem 1.25rem; text-align: center; }
+    .empty h2 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+    .empty p { margin: 0 auto; color: var(--muted); max-width: 30rem; }
+
+    .footnote { margin: 1rem 0 0; color: var(--muted); font-size: 0.8125rem; max-width: 40rem; }
+
+    @media (max-width: 30rem) {
+      .page { padding-top: 1.5rem; }
+      .fields { grid-template-columns: 1fr; gap: 0; }
+      .fields dd { margin-bottom: 0.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <div>
+        <h1>Inbound mail</h1>
+        <p class="lede">Real messages delivered to this project's receiving address, newest first.</p>
+      </div>
+      <div class="live" id="live" data-state="idle" role="status" aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="live-text">Connecting…</span>
+      </div>
+    </header>
+
+    <div class="banner" id="banner" role="alert" hidden></div>
+    <div class="banner is-info" id="notice" role="note" hidden></div>
+
+    <main class="ledger" aria-label="Received emails">
+      <div class="ledger-head" id="count">Loading…</div>
+      <ol class="rows" id="rows"></ol>
+      <div class="empty" id="empty" hidden>
+        <h2>Waiting for incoming email…</h2>
+        <p>Send an email from Gmail or Outlook to your Resend receiving address. It appears here within a few seconds of delivery.</p>
+      </div>
+    </main>
+
+    <p class="footnote">This page stores nothing. Mail is read from Resend's Receiving API; webhook events are also held in server memory temporarily and are lost on restart.</p>
+
+    <noscript><p class="lede">JavaScript is required to show live mail. The same data is available at <a href="/api/emails">/api/emails</a>.</p></noscript>
+  </div>
+
+  <script nonce="{{NONCE}}">
+    (() => {
+      "use strict";
+
+      const POLL_MS = 5000;
+      const MAX_BACKOFF_MS = 30000;
+      const LIMIT = 50;
+      const ENDPOINT = "/api/emails?limit=" + LIMIT;
+      const STATUS_LABEL = "\uD83D\uDFE2 Mail Received"; // 🟢 Mail Received
+
+      const rowsEl = document.getElementById("rows");
+      const emptyEl = document.getElementById("empty");
+      const bannerEl = document.getElementById("banner");
+      const noticeEl = document.getElementById("notice");
+      const countEl = document.getElementById("count");
+      const liveEl = document.getElementById("live");
+      const liveTextEl = document.getElementById("live-text");
+
+      const absFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "medium" });
+      const clockFmt = new Intl.DateTimeFormat(undefined, { timeStyle: "medium" });
+      const relFmt = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+      let knownIds = null;   // null until the first successful load, so old mail is not flashed as "new"
+      let renderedKey = "";
+      let failures = 0;
+      let timer = null;
+
+      function relative(date) {
+        const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+        const abs = Math.abs(seconds);
+        if (abs < 10) return "just now";
+        if (abs < 60) return relFmt.format(seconds, "second");
+        if (abs < 3600) return relFmt.format(Math.round(seconds / 60), "minute");
+        if (abs < 86400) return relFmt.format(Math.round(seconds / 3600), "hour");
+        return relFmt.format(Math.round(seconds / 86400), "day");
+      }
+
+      // All email-derived text goes through textContent, never innerHTML:
+      // sender, recipients and subject are controlled by whoever sent the mail.
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      function buildRow(email, isNew) {
+        const received = new Date(email.received_at);
+
+        const li = el("li", isNew ? "row is-new" : "row");
+
+        const top = el("div", "row-top");
+        top.appendChild(el("span", "status", STATUS_LABEL));
+
+        const when = el("time", "when");
+        when.dateTime = received.toISOString();
+        when.dataset.ts = String(received.getTime());
+        when.title = received.toUTCString();
+        when.appendChild(el("span", "when-label", "Received"));
+        when.appendChild(el("span", "when-abs", absFmt.format(received)));
+        when.appendChild(el("span", "when-rel", relative(received)));
+        top.appendChild(when);
+        li.appendChild(top);
+
+        const dl = el("dl", "fields");
+        const recipients = Array.isArray(email.recipients) ? email.recipients.join(", ") : "";
+        const subject = (email.subject || "").trim();
+
+        dl.appendChild(el("dt", null, "From"));
+        dl.appendChild(el("dd", null, email.sender));
+        dl.appendChild(el("dt", null, "To"));
+        dl.appendChild(el("dd", recipients ? null : "is-empty", recipients || "(unknown)"));
+        dl.appendChild(el("dt", null, "Subject"));
+        dl.appendChild(el("dd", subject ? "subject" : "is-empty", subject || "(no subject)"));
+        li.appendChild(dl);
+
+        return li;
+      }
+
+      function refreshRelativeTimes() {
+        rowsEl.querySelectorAll("time[data-ts]").forEach((node) => {
+          const rel = node.querySelector(".when-rel");
+          if (rel) rel.textContent = relative(new Date(Number(node.dataset.ts)));
+        });
+      }
+
+      function render(emails) {
+        const key = emails.map((e) => e.email_id).join(",");
+        if (key !== renderedKey) {
+          const fresh = new Set(emails.map((e) => e.email_id));
+          const fragment = document.createDocumentFragment();
+          for (const email of emails) {
+            const isNew = knownIds !== null && !knownIds.has(email.email_id);
+            fragment.appendChild(buildRow(email, isNew));
+          }
+          rowsEl.replaceChildren(fragment);
+          knownIds = fresh;
+          renderedKey = key;
+        } else {
+          knownIds = knownIds || new Set(emails.map((e) => e.email_id));
+          refreshRelativeTimes();
+        }
+
+        emptyEl.hidden = emails.length > 0;
+        const n = emails.length;
+        countEl.textContent = n === 0
+          ? "No emails yet"
+          : n >= LIMIT
+            ? "Latest " + n + " emails"
+            : n + (n === 1 ? " email received" : " emails received");
+      }
+
+      function setLive(state, text) {
+        liveEl.dataset.state = state;
+        liveTextEl.textContent = text;
+      }
+
+      function showNotice(sources) {
+        let text = "";
+        if (sources && sources.resend_api === "not_configured") {
+          text = "RESEND_API_KEY is not set, so only emails received by this server instance since it last started are shown. They can disappear between requests. Add the key for reliable results.";
+        } else if (sources && sources.resend_api === "error") {
+          text = "Couldn't read Resend's Receiving API" + (sources.resend_api_detail ? " (" + sources.resend_api_detail + ")" : "") + ". Showing only webhook events held in this server instance's memory.";
+        }
+        noticeEl.hidden = !text;
+        noticeEl.textContent = text;
+      }
+
+      function showError() {
+        bannerEl.hidden = false;
+        bannerEl.textContent = "Can't load emails right now. Retrying automatically.";
+        setLive("error", "Reconnecting…");
+      }
+
+      function schedule() {
+        clearTimeout(timer);
+        if (document.hidden) return; // resumes on visibilitychange
+        const delay = failures ? Math.min(POLL_MS * 2 ** failures, MAX_BACKOFF_MS) : POLL_MS;
+        timer = setTimeout(poll, delay);
+      }
+
+      async function poll() {
+        clearTimeout(timer);
+        const controller = new AbortController();
+        const abortTimer = setTimeout(() => controller.abort(), 10000);
+        try {
+          const res = await fetch(ENDPOINT, {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          if (!res.ok) {
+            const err = new Error("HTTP " + res.status);
+            err.status = res.status;
+            throw err;
+          }
+          const data = await res.json();
+          if (!data || !Array.isArray(data.emails)) throw new Error("Unexpected response");
+
+          render(data.emails);
+          showNotice(data.sources);
+          failures = 0;
+          bannerEl.hidden = true;
+          setLive("ok", "Live, checked " + clockFmt.format(new Date()));
+        } catch (err) {
+          failures += 1;
+          showError();
+        } finally {
+          clearTimeout(abortTimer);
+          schedule();
+        }
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) clearTimeout(timer);
+        else poll();
+      });
+
+      poll();
+    })();
+  </script>
+</body>
+</html>
